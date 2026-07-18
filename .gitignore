@@ -1,0 +1,14 @@
+# Dependencies / OS
+.DS_Store
+*.log
+node_modules/
+
+# WordPress runtime (bind-mounted volume contents, not theme source)
+wp-content/uploads/
+wp-content/upgrade/
+wp-content/backup-db/
+wp-content/cache/
+
+# Local env / secrets
+.env
+*.local

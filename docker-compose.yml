@@ -1,0 +1,60 @@
+services:
+  db:
+    image: mariadb:11.4
+    container_name: blastation-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wpuser
+      MYSQL_PASSWORD: wppassword
+      MYSQL_ROOT_PASSWORD: rootpassword
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - wpnet
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  wordpress:
+    image: wordpress:php8.3-fpm-alpine
+    container_name: blastation-wp
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppassword
+    volumes:
+      - wp_core:/var/www/html
+      - ./themes/stilla:/var/www/html/wp-content/themes/stilla
+    networks:
+      - wpnet
+
+  web:
+    image: nginx:1.27-alpine
+    container_name: blastation-web
+    restart: unless-stopped
+    depends_on:
+      - wordpress
+    ports:
+      - "8080:80"
+    volumes:
+      - wp_core:/var/www/html:ro
+      - ./themes/stilla:/var/www/html/wp-content/themes/stilla:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - wpnet
+
+volumes:
+  db_data:
+  wp_core:
+
+networks:
+  wpnet:
+    driver: bridge
