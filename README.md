@@ -126,6 +126,17 @@ provides MySQL.
 > WP install + theme re-run automatically on next boot. Product/catalogue data is code-defined
 > in `stilla_products()` (functions.php), so it survives a fresh install.
 
+### Automatic deploys (GitHub Actions)
+
+Pushing to `main` runs `.github/workflows/deploy.yml`: it lints the theme PHP, validates the
+Docker build, then runs `railway up` to deploy. Required GitHub **Secrets** (Settings →
+Secrets and variables → Actions):
+
+- `RAILWAY_TOKEN` — a Railway CI token (Railway dashboard → Account Settings → Tokens).
+- `RAILWAY_PROJECT_ID` — your Railway project ID.
+
+Optional GitHub **Variable**: `RAILWAY_SERVICE` (defaults to `stilla`).
+
 
 
 The site runs locally on port 8080. To share it:
