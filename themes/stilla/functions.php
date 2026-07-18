@@ -495,6 +495,9 @@ add_filter( 'template_include', function ( $template ) {
 add_action( 'wp_ajax_stilla_quote', 'stilla_handle_quote' );
 add_action( 'wp_ajax_nopriv_stilla_quote', 'stilla_handle_quote' );
 function stilla_handle_quote() {
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'code' => 'login', 'message' => 'Please sign in to request a quote.' ) );
+	}
 	$name    = sanitize_text_field( wp_unslash( $_POST['q_name'] ?? '' ) );
 	$email   = sanitize_email( wp_unslash( $_POST['q_email'] ?? '' ) );
 	$product = sanitize_text_field( wp_unslash( $_POST['q_product'] ?? '' ) );
@@ -537,6 +540,9 @@ define( 'STILLA_STRIPE_API', 'https://api.stripe.com/v1' );
 add_action( 'wp_ajax_stilla_checkout', 'stilla_handle_checkout' );
 add_action( 'wp_ajax_nopriv_stilla_checkout', 'stilla_handle_checkout' );
 function stilla_handle_checkout() {
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'code' => 'login', 'message' => 'Please sign in to checkout.' ) );
+	}
 	$slug  = sanitize_title( wp_unslash( $_POST['slug'] ?? '' ) );
 	$qty   = max( 1, (int) ( $_POST['qty'] ?? 1 ) );
 	$prod  = stilla_get_product( $slug );
@@ -649,6 +655,9 @@ function stilla_cart_get() { wp_send_json_success( array( 'items' => array_value
 add_action( 'wp_ajax_stilla_checkout_cart', 'stilla_checkout_cart' );
 add_action( 'wp_ajax_nopriv_stilla_checkout_cart', 'stilla_checkout_cart' );
 function stilla_checkout_cart() {
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'code' => 'login', 'message' => 'Please sign in to checkout.' ) );
+	}
 	$cart = stilla_cart();
 	if ( empty( $cart ) ) wp_send_json_error( array( 'message' => 'Your cart is empty.' ) );
 	$success = home_url( '/account/?paid=1' );

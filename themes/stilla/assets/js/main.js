@@ -248,6 +248,7 @@ if (buyBtn) {
 	if (qPlus && qtyInput) qPlus.addEventListener('click', () => { qtyInput.value = (parseInt(qtyInput.value,10)||1) + 1; });
 	if (qtyInput) qtyInput.addEventListener('change', () => { qtyInput.value = Math.max(1, parseInt(qtyInput.value,10)||1); });
 	buyBtn.addEventListener('click', async () => {
+		if ( ! stillaAjax.isLoggedIn ) { window.location.href = stillaAjax.loginUrl; return; }
 		status.textContent = 'Redirecting to secure checkout…'; status.className = 'buy-status';
 		const fd = new FormData();
 		fd.append('action', 'stilla_checkout');
@@ -364,7 +365,10 @@ const quoteModal = document.getElementById('quoteModal');
 if (quoteModal) {
 	const form = document.getElementById('quoteForm');
 	const msg = document.getElementById('quoteMsg');
-	const open = () => { quoteModal.removeAttribute('hidden'); document.body.style.overflow = 'hidden'; };
+	const open = () => {
+		if ( ! stillaAjax.isLoggedIn ) { window.location.href = stillaAjax.loginUrl; return; }
+		quoteModal.removeAttribute('hidden'); document.body.style.overflow = 'hidden';
+	};
 	const close = () => { quoteModal.setAttribute('hidden', ''); document.body.style.overflow = ''; msg.textContent = ''; msg.className = 'qform__msg'; };
 	document.getElementById('openQuote')?.addEventListener('click', open);
 	quoteModal.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', close));
@@ -378,6 +382,7 @@ if (quoteModal) {
 			const res = await fetch(stillaAjax.url, { method: 'POST', body: fd });
 			const data = await res.json();
 			if (data.success) { msg.textContent = data.data.message; msg.className = 'qform__msg is-ok'; form.reset(); setTimeout(close, 2600); }
+			else if (data.data && data.data.code === 'login') { window.location.href = stillaAjax.loginUrl; }
 			else { msg.textContent = data.data.message || 'Something went wrong.'; msg.className = 'qform__msg is-err'; }
 		} catch (err) {
 			msg.textContent = 'Network error — please try again.'; msg.className = 'qform__msg is-err';
