@@ -92,16 +92,17 @@ function stilla_seed_pages() {
 	}
 
 	// Primary navbar: logo left (CSS), links centered, tools right.
+	// Menu URLs are stored root-relative so they resolve on any domain / tunnel.
 	// "About / Reviews / Projects" point to on-page sections (no dedicated pages needed).
 	$menu = wp_get_nav_menu_object( 'Primary' );
 	$menu_id = $menu ? $menu->term_id : wp_create_nav_menu( 'Primary' );
 	foreach ( wp_get_nav_menu_items( $menu_id ) as $mi ) { wp_delete_post( $mi->ID, true ); }
 	$menu_items = array(
-		array( 'Home',     home_url( '/' ) ),
-		array( 'About',    home_url( '/' ) . '#about' ),
-		array( 'Products', home_url( '/products/' ) ),
-		array( 'Reviews',  home_url( '/' ) . '#clients' ),
-		array( 'Projects', home_url( '/' ) . '#projects' ),
+		array( 'Home',     '/' ),
+		array( 'About',    '/#about' ),
+		array( 'Products', '/products/' ),
+		array( 'Reviews',  '/#clients' ),
+		array( 'Projects', '/#projects' ),
 	);
 	$i = 1;
 	foreach ( $menu_items as $data ) {
