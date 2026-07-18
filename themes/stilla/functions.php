@@ -25,6 +25,30 @@ add_action( 'init', function () {
 	register_nav_menus( array( 'primary' => __( 'Primary Menu', 'stilla' ) ) );
 } );
 
+/* ---------- SHOWREEL VIDEO SOURCE ---------- */
+// Resolve the showreel video source: self-hosted MP4 from the Customizer, else the Media
+// Library attachment, else a bundled sample. URLs are rewritten to the current Host so the
+// video loads correctly behind any domain / tunnel (see mu-plugin dynamic-url.php).
+function stilla_film_url() {
+	$custom = get_theme_mod( 'stilla_film_url', '' );
+	if ( $custom ) {
+		// The stored URL may carry the original (localhost) origin; rewrite it to the
+		// host this request actually arrived on so it loads behind the tunnel too.
+		$host  = $_SERVER['HTTP_HOST'] ?? parse_url( $custom, PHP_URL_HOST );
+		$proto = ( ! empty( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] !== 'off' )
+			|| ( $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '' ) === 'https' ? 'https' : 'http';
+		$cur   = $proto . '://' . $host;
+		$origin = ( parse_url( $custom, PHP_URL_SCHEME ) ?: 'http' ) . '://' . parse_url( $custom, PHP_URL_HOST );
+		if ( $port = parse_url( $custom, PHP_URL_PORT ) ) { $origin .= ':' . $port; }
+		return $origin === $cur ? $custom : str_replace( $origin, $cur, $custom );
+	}
+	$att = (int) get_option( 'stilla_film_attach', 0 );
+	if ( $att && wp_attachment_is( 'video', $att ) ) {
+		return wp_get_attachment_url( $att );
+	}
+	return 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4';
+}
+
 /* ---------- THEME OPTIONS (Customizer) ---------- */
 add_action( 'customize_register', function ( $wp_customize ) {
 	$wp_customize->add_section( 'stilla_film', array(
@@ -570,6 +594,7 @@ function stilla_handle_checkout() {
 		'line_items[0][quantity]'                        => $qty,
 		'metadata[product]'      => $slug,
 		'metadata[order_ref]'    => 'STL-' . time() . '-' . wp_rand( 100, 999 ),
+		'metadata[wp_user]'      => (string) get_current_user_id(),
 	) );
 	$ch = curl_init( STILLA_STRIPE_API . '/checkout/sessions' );
 	curl_setopt_array( $ch, array(
@@ -631,6 +656,7 @@ function stilla_stripe_webhook() {
 	if ( $event['type'] === 'checkout.session.completed' ) {
 		$sess      = $event['data']['object'] ?? array();
 		$ref       = $sess['metadata']['order_ref'] ?? '';
+		$wp_user   = (int) ( $sess['metadata']['wp_user'] ?? 0 );
 		$email     = $sess['customer_details']['email'] ?? '';
 		$amount    = isset( $sess['amount_total'] ) ? ( (int) $sess['amount_total'] ) / 100 : 0;
 		$session_id= $sess['id'] ?? '';
@@ -642,6 +668,7 @@ function stilla_stripe_webhook() {
 		$existing = stilla_order_by_ref( $ref );
 		$meta = array(
 			'order_ref'   => $ref,
+			'wp_user'     => $wp_user,
 			'email'       => $email,
 			'amount'      => $amount,
 			'paid'        => 1,
@@ -649,7 +676,7 @@ function stilla_stripe_webhook() {
 			'session_id'  => $session_id,
 		);
 		if ( $existing ) {
-			wp_update_post( array( 'ID' => $existing, 'post_status' => 'private' ) );
+			wp_update_post( array( 'ID' => $existing, 'post_status' => 'private', 'post_author' => $wp_user ) );
 			foreach ( $meta as $k => $v ) { update_post_meta( $existing, $k, $v ); }
 		} else {
 			wp_insert_post( array(
@@ -657,7 +684,7 @@ function stilla_stripe_webhook() {
 				'post_title'   => 'Order ' . ( $ref ?: $session_id ),
 				'post_content' => 'Stripe Checkout Session ' . $session_id . ( $email ? ' — ' . $email : '' ),
 				'post_status'  => 'private',
-				'post_author'  => 0,
+				'post_author'  => $wp_user,
 				'meta_input'   => $meta,
 			) );
 		}
@@ -748,6 +775,7 @@ function stilla_checkout_cart() {
 	$line_items['success_url'] = $success;
 	$line_items['cancel_url']  = $cancel;
 	$line_items['metadata[order_ref]'] = 'STL-' . time() . '-' . wp_rand( 100, 999 );
+	$line_items['metadata[wp_user]']    = (string) get_current_user_id();
 	$payload = http_build_query( $line_items );
 	$ch = curl_init( STILLA_STRIPE_API . '/checkout/sessions' );
 	curl_setopt_array( $ch, array(

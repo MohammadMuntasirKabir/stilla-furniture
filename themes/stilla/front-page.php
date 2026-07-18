@@ -1,27 +1,7 @@
 <?php
-// Resolve the showreel video source: self-hosted MP4 from the Customizer, else the Media
-// Library attachment, else a bundled sample. URLs are rewritten to the current Host so the
-// video loads correctly behind any domain / tunnel (see mu-plugin dynamic-url.php).
-function stilla_film_url() {
-	$custom = get_theme_mod( 'stilla_film_url', '' );
-	if ( $custom ) {
-		// The stored URL may carry the original (localhost) origin; rewrite it to the
-		// host this request actually arrived on so it loads behind the tunnel too.
-		$host  = $_SERVER['HTTP_HOST'] ?? parse_url( $custom, PHP_URL_HOST );
-		$proto = ( ! empty( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] !== 'off' )
-			|| ( $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '' ) === 'https' ? 'https' : 'http';
-		$cur   = $proto . '://' . $host;
-		$origin = ( parse_url( $custom, PHP_URL_SCHEME ) ?: 'http' ) . '://' . parse_url( $custom, PHP_URL_HOST );
-		if ( $port = parse_url( $custom, PHP_URL_PORT ) ) { $origin .= ':' . $port; }
-		return $origin === $cur ? $custom : str_replace( $origin, $cur, $custom );
-	}
-	$att = (int) get_option( 'stilla_film_attach', 0 );
-	if ( $att && wp_attachment_is( 'video', $att ) ) {
-		return wp_get_attachment_url( $att );
-	}
-	return 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4';
-}
-
+/**
+ * Front page (home) — editorial storefront.
+ */
 get_header();
 
 // Helper to render a product card used in the carousels.

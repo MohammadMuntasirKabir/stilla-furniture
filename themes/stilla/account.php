@@ -32,14 +32,20 @@ if ( ! $logged_in ) {
 		$orders = get_posts( array( 'post_type' => 'stilla_order', 'author' => $user->ID, 'posts_per_page' => 50, 'post_status' => 'private' ) );
 		if ( $orders ) : ?>
 			<ul class="orderlist">
-				<?php foreach ( $orders as $o ) : ?>
+				<?php foreach ( $orders as $o ) :
+					$amount = (float) ( get_post_meta( $o->ID, 'amount', true ) ?: get_post_meta( $o->ID, 'total', true ) ?: 0 );
+					$paid   = (int) get_post_meta( $o->ID, 'paid', true );
+					$ref    = get_post_meta( $o->ID, 'order_ref', true );
+				?>
 				<li>
 					<div>
 						<strong><?php echo esc_html( $o->post_title ); ?></strong>
+						<?php if ( $ref ) : ?><span class="orderlist__ref"><?php echo esc_html( $ref ); ?></span><?php endif; ?>
 						<span class="orderlist__date"><?php echo esc_html( get_the_date( 'j M Y', $o ) ); ?></span>
+						<?php if ( $paid ) : ?><span class="orderlist__paid">Paid</span><?php else : ?><span class="orderlist__unpaid">Unpaid</span><?php endif; ?>
 						<p><?php echo nl2br( esc_html( $o->post_content ) ); ?></p>
 					</div>
-					<span class="orderlist__total">$<?php echo number_format( get_post_meta( $o->ID, 'total', true ) ?: 0 ); ?></span>
+					<span class="orderlist__total">$<?php echo number_format( $amount, 2 ); ?></span>
 				</li>
 				<?php endforeach; ?>
 			</ul>
