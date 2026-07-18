@@ -1,10 +1,14 @@
 <?php
 /**
  * Login page — split-screen professional layout.
+ * Sign-in view shows only up to the "Forgot password?" link. Clicking it swaps to a
+ * separate reset-password view (not inline on the sign-in page).
  */
 get_header();
-$err = isset( $_GET['login'] ) && $_GET['login'] === 'error';
+$err  = isset( $_GET['login'] ) && $_GET['login'] === 'error';
 $sent = isset( $_GET['checkemail'] );
+// If the success message is present, open directly on the reset view.
+$view = $sent ? 'reset' : 'login';
 ?>
 <main id="content" class="authpage">
 	<section class="auth-split">
@@ -26,7 +30,8 @@ $sent = isset( $_GET['checkemail'] );
 
 		<!-- Form panel -->
 		<div class="auth-main">
-			<div class="auth-card">
+			<!-- VIEW 1: SIGN IN (up to the Forgot password? link only) -->
+			<div class="auth-card" id="loginCard" data-view="login"<?php echo $view === 'login' ? '' : ' hidden'; ?>>
 				<header class="auth-card__head">
 					<h1>Sign in</h1>
 					<p>New to Stilla? <a class="auth-link" href="<?php echo esc_url( home_url( '/register/' ) ); ?>">Create an account</a></p>
@@ -34,10 +39,6 @@ $sent = isset( $_GET['checkemail'] );
 
 				<?php if ( $err ) : ?>
 					<div class="auth-alert" role="alert">Wrong email or password. Please try again.</div>
-				<?php endif; ?>
-
-				<?php if ( $sent ) : ?>
-					<div class="auth-ok" role="status">If that email exists, a reset link is on its way. Check your inbox.</div>
 				<?php endif; ?>
 
 				<form method="post" class="auth-form" novalidate>
@@ -55,20 +56,33 @@ $sent = isset( $_GET['checkemail'] );
 
 				<a href="#" class="auth-forgot" id="forgotToggle">Forgot password?</a>
 
-				<form method="post" class="auth-form auth-form--forgot" id="forgotForm" hidden>
-					<input type="hidden" name="stilla_action" value="lostpassword">
-					<p class="auth-forgot__hint">Enter your account email and we'll send a reset link.</p>
-					<div class="field">
-						<input type="email" id="lost_email" name="lost_email" placeholder=" " required autocomplete="email">
-						<label for="lost_email">Email address</label>
-					</div>
-					<button type="submit" class="btn-auth">Send reset link</button>
-					<a href="#" class="auth-forgot auth-forgot__back" id="forgotBack">← Back to sign in</a>
-				</form>
-
 				<p class="auth-card__switch">
 					Don't have an account? <a class="auth-link" href="<?php echo esc_url( home_url( '/register/' ) ); ?>">Register →</a>
 				</p>
+			</div>
+
+			<!-- VIEW 2: RESET PASSWORD (separate view, shown after clicking Forgot password) -->
+			<div class="auth-card" id="resetCard" data-view="reset"<?php echo $view === 'reset' ? '' : ' hidden'; ?>>
+				<header class="auth-card__head">
+					<h1>Reset password</h1>
+					<p>We'll email you a link to set a new password.</p>
+				</header>
+
+				<?php if ( $sent ) : ?>
+					<div class="auth-ok" role="status">If that email exists, a reset link is on its way. Check your inbox.</div>
+				<?php else : ?>
+					<form method="post" class="auth-form" novalidate>
+						<input type="hidden" name="stilla_action" value="lostpassword">
+						<p class="auth-forgot__hint">Enter your account email and we'll send a reset link.</p>
+						<div class="field">
+							<input type="email" id="lost_email" name="lost_email" placeholder=" " required autocomplete="email">
+							<label for="lost_email">Email address</label>
+						</div>
+						<button type="submit" class="btn-auth">Send reset link</button>
+					</form>
+				<?php endif; ?>
+
+				<a href="#" class="auth-forgot" id="forgotBack">← Back to sign in</a>
 			</div>
 		</div>
 	</section>

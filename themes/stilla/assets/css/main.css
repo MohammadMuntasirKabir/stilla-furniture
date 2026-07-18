@@ -561,7 +561,6 @@ h1,h2,h3,h4 { font-weight: 700; letter-spacing: -0.01em; line-height: 1.05; }
 .auth-card__switch { margin-top: 22px; font-size: 14px; color: var(--ink-soft); text-align: center; }
 .auth-forgot { display: inline-block; margin-top: 14px; font-size: 13px; font-weight: 600; color: var(--ink-soft); }
 .auth-forgot:hover { color: var(--accent); }
-.auth-form--forgot { margin-top: 6px; }
 .auth-forgot__hint { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; }
 .auth-forgot__back { margin-top: 14px; }
 .auth-ok { background: #e7f4ec; color: #1d6b3f; padding: 12px 14px; border-radius: 10px; font-size: 14px; margin-bottom: 18px; border: 1px solid #bfe3cd; }

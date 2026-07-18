@@ -394,13 +394,13 @@ document.querySelectorAll('.review[data-rating]').forEach((el) => {
 	wrap.textContent = html;
 });
 
-// ---------- FORGOT PASSWORD TOGGLE ----------
+// ---------- FORGOT PASSWORD TOGGLE (swap views) ----------
 const forgotToggle = document.getElementById('forgotToggle');
-const forgotForm = document.getElementById('forgotForm');
 const forgotBack = document.getElementById('forgotBack');
-const loginForm = document.querySelector('.auth-card form.auth-form:not(.auth-form--forgot)');
-if (forgotToggle && forgotForm) {
-	forgotToggle.addEventListener('click', (e) => { e.preventDefault(); forgotForm.hidden = false; forgotToggle.hidden = true; if (loginForm) loginForm.hidden = true; forgotForm.querySelector('input')?.focus(); });
-	if (forgotBack) forgotBack.addEventListener('click', (e) => { e.preventDefault(); forgotForm.hidden = true; forgotToggle.hidden = false; if (loginForm) loginForm.hidden = false; });
+const loginCard = document.getElementById('loginCard');
+const resetCard = document.getElementById('resetCard');
+if (forgotToggle && loginCard && resetCard) {
+	forgotToggle.addEventListener('click', (e) => { e.preventDefault(); loginCard.hidden = true; resetCard.hidden = false; resetCard.querySelector('input')?.focus(); });
+	if (forgotBack) forgotBack.addEventListener('click', (e) => { e.preventDefault(); resetCard.hidden = true; loginCard.hidden = false; loginCard.querySelector('input')?.focus(); });
 }
 
