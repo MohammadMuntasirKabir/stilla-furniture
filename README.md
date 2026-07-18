@@ -15,19 +15,28 @@ SEO.
 |------|-----------|--------------|
 | ![Home](docs/home.png) | ![Catalogue](docs/catalog.png) | ![Product](docs/product.png) |
 
-| Client reviews | Sign in | Create account |
-|----------------|---------|----------------|
-| ![Clients](docs/clients.png) | ![Login](docs/login.png) | ![Register](docs/register.png) |
+| Client reviews | Film / video section | Content page (Company) |
+|----------------|----------------------|------------------------|
+| ![Clients](docs/clients.png) | ![Video](docs/video.png) | ![Company](docs/company.png) |
+
+| Inspiration | Sustainability | Footer |
+|-------------|----------------|--------|
+| ![Inspiration](docs/inspiration.png) | ![Sustainability](docs/sustainability.png) | ![Footer](docs/footer.png) |
+
+| Sign in | Create account |
+|---------|----------------|
+| ![Login](docs/login.png) | ![Register](docs/register.png) |
 
 ## Features
 
 - **Editorial homepage** — parallax hero, animated marquee, draggable product carousels
-  (SOMA / FRANKFURTER families) with prev-next + dots, tilt-on-hover editorials, a showreel
-  block, and a newsletter footer. Respects `prefers-reduced-motion`.
-- **Startech-style catalogue** (`/products/`) — sticky sidebar with live search, category
-  checkboxes (Sofas / Chairs / Stools / Tables / Outdoor), collection checkboxes
-  (SOMA / FRANKFURTER / OUTDOOR), a dual price slider, an "In stock only" toggle, and a
-  sort dropdown. All filtering is instant client-side.
+  (SOMA / FRANKFURTER families) with prev-next + dots, tilt-on-hover editorials, a **film
+  section** (responsive `<video>` with poster), and a newsletter footer. Respects
+  `prefers-reduced-motion`.
+- **Content pages** — every navbar link lands on real content: Home, Products, **Inspiration**
+  (client project stories + reviews), **Sustainability** (materials & repair-first programme),
+  **Tools** (spec sheets / care guides), and **Company** (studio story). Each has a branded
+  hero, featured image and SEO metadata.
 - **Product detail pages** (`/product/<slug>/`) — minimal layout with sticky gallery +
   thumbnail switcher, price (incl. VAT), stock badge, quantity stepper, Add to cart / Buy now
   / Request a quote, and Specifications / Delivery & care accordions.

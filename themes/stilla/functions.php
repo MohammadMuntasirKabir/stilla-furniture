@@ -30,29 +30,64 @@ add_theme_support( 'post-thumbnails' );
 
 /* ---------- SEED PAGES + NAV (so every nav link has real content) ---------- */
 function stilla_seed_pages() {
-$pages = array(
-	'home'          => array( 'Home',          'home',          'Welcome to Stilla — Scandinavian furniture made in Åhus, Sweden.' ),
-	'products'      => array( 'Products',      'products',      'Browse the full Stilla catalogue of sofas, chairs, tables and outdoor pieces.' ),
-	'inspiration'   => array( 'Inspiration',   'inspiration',   'Project stories, moodboards and the spaces our furniture lives in — from restaurants to studios.' ),
-	'sustainability'=> array( 'Sustainability','sustainability','How Stilla designs for longevity: durable materials, local production and repairable pieces.' ),
-	'tools'         => array( 'Tools',         'tools',         'Spec sheets, care guides and planning tools to help you design with Stilla.' ),
-	'company'       => array( 'Company',       'company',       'Stilla is a Scandinavian furniture studio based in Åhus, Sweden. Peace, love & good design.' ),
-);
-$ids = array();
-foreach ( $pages as $key => $p ) {
-	$post = get_page_by_path( $p[1] );
-	if ( ! $post ) {
-		$ids[ $key ] = wp_insert_post( array(
-			'post_title'   => $p[0],
-			'post_name'    => $p[1],
-			'post_content' => '<!-- wp:paragraph -->' . $p[2] . '<!-- /wp:paragraph -->',
-			'post_status'  => 'publish',
-			'post_type'    => 'page',
-		) );
-	} else {
-		$ids[ $key ] = $post->ID;
+	$pages = array(
+		'home' => array(
+			'Home', 'home',
+			'Welcome to Stilla — Scandinavian furniture made in Åhus, Sweden.',
+			'Stilla designs contract-grade Scandinavian furniture that is built to last a lifetime. Explore the Måne, Frankfurt and Terra families.',
+			'hero',
+		),
+		'products' => array(
+			'Products', 'products',
+			'Browse the full Stilla catalogue of sofas, chairs, tables and outdoor pieces.',
+			'The complete Stilla collection: modular sofas, lounge chairs, low tables and all-weather outdoor pieces. Filter by family, type and price, then buy securely with Stripe.',
+			'sofa_a',
+		),
+		'inspiration' => array(
+			'Inspiration', 'inspiration',
+			'Project stories, moodboards and the spaces our furniture lives in — from restaurants to studios.',
+			'See how studios, restaurants and hotels around the world live with Stilla. Real projects, honest reviews and the thinking behind each space we help shape.',
+			'interior_a',
+		),
+		'sustainability' => array(
+			'Sustainability', 'sustainability',
+			'How Stilla designs for longevity: durable materials, local production and repairable pieces.',
+			'Longevity is the most sustainable material. Stilla builds in Åhus from FSC-certified timber and recyclable steel, with replaceable slipcovers and a repair-first programme that keeps pieces out of landfill.',
+			'chair_c',
+		),
+		'tools' => array(
+			'Tools', 'tools',
+			'Spec sheets, care guides and planning tools to help you design with Stilla.',
+			'Download spec sheets, care instructions and 2D/3D planning assets. Everything you need to specify Stilla with confidence — for homes and contract projects alike.',
+			'table_a',
+		),
+		'company' => array(
+			'Company', 'company',
+			'Stilla is a Scandinavian furniture studio based in Åhus, Sweden. Peace, love & good design.',
+			'Stilla is a Scandinavian furniture studio in Åhus, Sweden. Since 1986 we have designed contract-grade pieces that pair honest materials with a distinctly Nordic calm. This is a demo storefront inspired by blastation.com.',
+			'studio_a',
+		),
+	);
+	$ids = array();
+	foreach ( $pages as $key => $p ) {
+		$post = get_page_by_path( $p[1] );
+		if ( ! $post ) {
+			$ids[ $key ] = wp_insert_post( array(
+				'post_title'    => $p[0],
+				'post_name'     => $p[1],
+				'post_excerpt'  => $p[2],
+				'post_content'  => '<!-- wp:paragraph -->' . $p[3] . '<!-- /wp:paragraph -->',
+				'post_status'   => 'publish',
+				'post_type'     => 'page',
+			) );
+		} else {
+			$ids[ $key ] = $post->ID;
+		}
+		// Keep excerpt + featured image in sync on every seed (so re-seeds update content).
+		wp_update_post( array( 'ID' => $ids[ $key ], 'post_excerpt' => $p[2] ) );
+		$img_id = stilla_unsplash_attachment( $p[4] ?? 'hero' );
+		if ( $img_id && ! is_wp_error( $img_id ) ) { set_post_thumbnail( $ids[ $key ], $img_id ); }
 	}
-}
 // Build the primary menu pointing at these pages (rebuild on seed).
 $menu = wp_get_nav_menu_object( 'Primary' );
 if ( ! $menu ) { $menu_id = wp_create_nav_menu( 'Primary' ); }
@@ -119,6 +154,16 @@ function stilla_seo_context() {
 	} elseif ( is_front_page() ) {
 		$ctx['title']    = 'Stilla — Scandinavian Furniture, Made to Last';
 		$ctx['og_title'] = 'Stilla — Scandinavian Furniture';
+	} elseif ( is_page() ) {
+		$pid  = get_the_ID();
+		$pt   = get_post( $pid );
+		$ctx['title']    = $pt ? $pt->post_title : 'Stilla';
+		$ctx['og_title'] = $pt ? $pt->post_title : 'Stilla';
+		$excerpt = $pt && $pt->post_excerpt ? $pt->post_excerpt : wp_trim_words( wp_strip_all_tags( $pt->post_content ?? '' ), 28, '…' );
+		if ( $excerpt ) { $ctx['description'] = $excerpt; }
+		$feat = get_the_post_thumbnail_url( $pid, 'large' );
+		if ( $feat ) { $ctx['image'] = $feat; }
+		$ctx['type'] = 'article';
 	}
 	return $ctx;
 }
@@ -196,6 +241,19 @@ add_action( 'wp_head', function () {
 		);
 		echo '<script type="application/ld+json">' . wp_json_encode( $bc, JSON_UNESCAPED_SLASHES ) . '</script>' . "\n";
 	}
+	if ( is_page() && ! get_query_var( 'stilla_product' ) && ! get_query_var( 'stilla_products' ) && ! get_query_var( 'stilla_auth' ) ) {
+		$page = get_post( get_the_ID() );
+		if ( $page ) {
+			$wp_ld = array(
+				'@context' => 'https://schema.org',
+				'@type'    => 'WebPage',
+				'name'     => $page->post_title,
+				'url'      => get_permalink( $page ),
+				'isPartOf' => array( '@type' => 'WebSite', 'name' => 'Stilla', 'url' => home_url( '/' ) ),
+			);
+			echo '<script type="application/ld+json">' . wp_json_encode( $wp_ld, JSON_UNESCAPED_SLASHES ) . '</script>' . "\n";
+		}
+	}
 	echo "<!-- /SEO -->\n";
 }, 1 );
 
@@ -272,6 +330,45 @@ function stilla_img( $key = 'hero', $w = 800 ) {
 	$map = stilla_images();
 	$id  = $map[ $key ] ?? $map['hero'];
 	return 'https://images.unsplash.com/photo-' . $id . '?auto=format&fit=crop&w=' . $w . '&q=70';
+}
+
+// Import an Unsplash photo into the media library (cached by a meta key) so pages can have a
+// real featured image + SEO og:image. Returns an attachment ID or 0 on failure.
+function stilla_unsplash_attachment( $key = 'hero' ) {
+	$cached = get_option( 'stilla_attach_' . $key );
+	if ( $cached && wp_attachment_is_image( $cached ) ) return (int) $cached;
+	if ( ! function_exists( 'media_sideload_image' ) ) {
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+	}
+	$url  = stilla_img( $key, 1200 );
+	$tmp  = trailingslashit( get_temp_dir() ) . 'stilla-' . $key . '.jpg';
+	// Download to a local temp file first (Unsplash URLs aren't accepted directly by sideload).
+	$body = wp_remote_retrieve_body( wp_safe_remote_get( $url, array( 'timeout' => 30 ) ) );
+	if ( ! $body ) { $body = @shell_exec( 'curl -sL ' . escapeshellarg( $url ) ); }
+	$id = 0;
+	if ( $body ) {
+		file_put_contents( $tmp, $body );
+		if ( file_exists( $tmp ) ) {
+			$ft = wp_check_filetype( $tmp );
+			$att = array(
+				'post_mime_type' => $ft['type'] ?: 'image/jpeg',
+				'post_title'     => ucfirst( $key ) . ' (Stilla)',
+				'post_content'   => '',
+				'post_status'    => 'inherit',
+			);
+			$id = wp_insert_attachment( $att, $tmp, 0 );
+			if ( ! is_wp_error( $id ) ) {
+				require_once ABSPATH . 'wp-admin/includes/image.php';
+				wp_update_attachment_metadata( $id, wp_generate_attachment_metadata( $id, $tmp ) );
+			} else { $id = 0; }
+			@unlink( $tmp );
+		}
+	}
+	if ( ! $id ) return 0;
+	update_option( 'stilla_attach_' . $key, $id );
+	return (int) $id;
 }
 
 /* ---------- PRODUCT DATA (single source of truth) ---------- */

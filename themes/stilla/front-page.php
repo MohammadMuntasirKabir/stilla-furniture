@@ -79,15 +79,18 @@ $frank = array_filter( $products, fn( $p ) => $p['family'] === 'FRANKFURTER' );
 		</div>
 	</section>
 
-	<!-- SHOWREEL -->
+	<!-- SHOWREEL / FILM -->
 	<section class="showreel reveal">
-		<a class="showreel__art" data-parallax="0.1" href="<?php echo home_url( '/product/l428-soma-table/' ); ?>" style="background-image:url('<?php echo stilla_img( 'table_a', 1100 ); ?>')">
-			<span class="showreel__play" aria-hidden="true">▶</span>
-		</a>
+		<div class="showreel__media">
+			<video class="showreel__video" controls preload="none" poster="<?php echo stilla_img( 'table_a', 1100 ); ?>">
+				<source src="https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4" type="video/mp4">
+				Your browser does not support the video tag.
+			</video>
+		</div>
 		<div class="showreel__copy">
 			<h2>ABLE TABLE</h2>
 			<p>A sleek and refined table with a confident, distinctive approach that fits just as well in an office, a dining room, or a boardroom as it does at home. We refined and simplified it until the solution became self-evident.</p>
-			<a class="link-underline" href="<?php echo home_url( '/product/l428-soma-table/' ); ?>">Watch the film →</a>
+			<a class="link-underline" href="<?php echo home_url( '/product/l428-soma-table/' ); ?>">Explore the Able Table →</a>
 		</div>
 	</section>
 
@@ -127,7 +130,6 @@ $frank = array_filter( $products, fn( $p ) => $p['family'] === 'FRANKFURTER' );
 	<section class="clients reveal" id="clients">
 		<div class="carousel-sec__head reveal">
 			<div><h2>TRUSTED BY STUDIOS &amp; BRANDS</h2><span class="carousel-sec__count">FURNITURE DELIVERED WORLDWIDE</span></div>
-			<a class="link-underline" href="<?php echo home_url( '/products/' ); ?>">See all products →</a>
 		</div>
 
 		<div class="clients__logos">
