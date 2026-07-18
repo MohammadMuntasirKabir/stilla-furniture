@@ -17,8 +17,10 @@ $gallery  = $p['gallery'] ?? array( $p['img'] );
 ?>
 <main id="content" class="product">
 
-	<?php if ( ! empty( $_GET['paid'] ) ) : ?>
-	<div class="order-banner">✓ Payment successful — thank you! Your order reference is <strong>STL-<?php echo esc_html( gmdate( 'Ymd' ) ); ?>-<?php echo esc_html( wp_rand( 100, 999 ) ); ?></strong>. A confirmation has been recorded.</div>
+	<?php if ( ! empty( $_GET['paid'] ) ) :
+		$ref = isset( $_GET['ref'] ) ? preg_replace( '/[^A-Za-z0-9\-]/', '', $_GET['ref'] ) : '';
+	?>
+	<div class="order-banner">✓ Payment successful — thank you!<?php if ( $ref ) : ?> Your order reference is <strong><?php echo esc_html( $ref ); ?></strong>.<?php endif; ?> A confirmation has been recorded.</div>
 	<?php endif; ?>
 
 	<nav class="product__crumb">

@@ -373,27 +373,31 @@ function stilla_unsplash_attachment( $key = 'hero' ) {
 	}
 	$url  = stilla_img( $key, 1200 );
 	$tmp  = trailingslashit( get_temp_dir() ) . 'stilla-' . $key . '.jpg';
-	// Download to a local temp file first (Unsplash URLs aren't accepted directly by sideload).
-	$body = wp_remote_retrieve_body( wp_safe_remote_get( $url, array( 'timeout' => 30 ) ) );
-	if ( ! $body ) { $body = @shell_exec( 'curl -sL ' . escapeshellarg( $url ) ); }
+	// Download via the WordPress HTTP API (never shell out).
+	$response = wp_safe_remote_get( $url, array( 'timeout' => 30, 'headers' => array( 'Accept' => 'image/*' ) ) );
+	if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) !== 200 ) {
+		return 0;
+	}
+	$body = wp_remote_retrieve_body( $response );
+	if ( empty( $body ) ) {
+		return 0;
+	}
 	$id = 0;
-	if ( $body ) {
-		file_put_contents( $tmp, $body );
-		if ( file_exists( $tmp ) ) {
-			$ft = wp_check_filetype( $tmp );
-			$att = array(
-				'post_mime_type' => $ft['type'] ?: 'image/jpeg',
-				'post_title'     => ucfirst( $key ) . ' (Stilla)',
-				'post_content'   => '',
-				'post_status'    => 'inherit',
-			);
-			$id = wp_insert_attachment( $att, $tmp, 0 );
-			if ( ! is_wp_error( $id ) ) {
-				require_once ABSPATH . 'wp-admin/includes/image.php';
-				wp_update_attachment_metadata( $id, wp_generate_attachment_metadata( $id, $tmp ) );
-			} else { $id = 0; }
-			@unlink( $tmp );
-		}
+	file_put_contents( $tmp, $body );
+	if ( file_exists( $tmp ) ) {
+		$ft = wp_check_filetype( $tmp );
+		$att = array(
+			'post_mime_type' => $ft['type'] ?: 'image/jpeg',
+			'post_title'     => ucfirst( $key ) . ' (Stilla)',
+			'post_content'   => '',
+			'post_status'    => 'inherit',
+		);
+		$id = wp_insert_attachment( $att, $tmp, 0 );
+		if ( ! is_wp_error( $id ) ) {
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+			wp_update_attachment_metadata( $id, wp_generate_attachment_metadata( $id, $tmp ) );
+		} else { $id = 0; }
+		@unlink( $tmp );
 	}
 	if ( ! $id ) return 0;
 	update_option( 'stilla_attach_' . $key, $id );
@@ -406,15 +410,15 @@ function stilla_products() {
 		// SOMA family
 		array( 'slug' => 's42-soma',        'code' => 'S42',  'name' => 'Måne Sofa',          'family' => 'SOMA',        'type' => 'sofa',  'img' => 'sofa_a',
 			'blurb' => 'A slipcover sofa that turns two frames and two foam moulds into almost endless configurations.',
-			'specs' => array( 'Width' => '212 cm', 'Depth' => '92 cm', 'Height' => '74 cm', 'Seat height' => '42 cm', 'Frame' => 'Beech, lacquered', ' Cover' => 'Removable slipcover' ),
+			'specs' => array( 'Width' => '212 cm', 'Depth' => '92 cm', 'Height' => '74 cm', 'Seat height' => '42 cm', 'Frame' => 'Beech, lacquered', 'Cover' => 'Removable slipcover' ),
 			'gallery' => array( 'sofa_a', 'interior_a' ) ),
 		array( 'slug' => 's420-soma',       'code' => 'S420', 'name' => 'Liten Måne',         'family' => 'SOMA',        'type' => 'sofa',  'img' => 'sofa_b',
 			'blurb' => 'The two-seat Måne — compact comfort with the same contract-level feel.',
-			'specs' => array( 'Width' => '168 cm', 'Depth' => '92 cm', 'Height' => '74 cm', 'Seat height' => '42 cm', 'Frame' => 'Beech, lacquered', ' Cover' => 'Removable slipcover' ),
+			'specs' => array( 'Width' => '168 cm', 'Depth' => '92 cm', 'Height' => '74 cm', 'Seat height' => '42 cm', 'Frame' => 'Beech, lacquered', 'Cover' => 'Removable slipcover' ),
 			'gallery' => array( 'sofa_b', 'interior_b' ) ),
 		array( 'slug' => 's422-soma',       'code' => 'S422', 'name' => 'Måne Hörn',          'family' => 'SOMA',        'type' => 'sofa',  'img' => 'sofa_c',
 			'blurb' => 'The Måne corner module for structuring lounges and collaborative spaces.',
-			'specs' => array( 'Width' => '240 cm', 'Depth' => '160 cm', 'Height' => '74 cm', 'Seat height' => '42 cm', 'Frame' => 'Beech, lacquered', ' Cover' => 'Removable slipcover' ),
+			'specs' => array( 'Width' => '240 cm', 'Depth' => '160 cm', 'Height' => '74 cm', 'Seat height' => '42 cm', 'Frame' => 'Beech, lacquered', 'Cover' => 'Removable slipcover' ),
 			'gallery' => array( 'sofa_c', 'interior_c' ) ),
 		array( 'slug' => 'l428-soma-table', 'code' => 'L428', 'name' => 'Solsidan Table',     'family' => 'SOMA',        'type' => 'table', 'img' => 'table_a',
 			'blurb' => 'A confident low table that completes the Måne system.',
@@ -426,7 +430,7 @@ function stilla_products() {
 			'gallery' => array( 'table_b', 'interior_b' ) ),
 		array( 'slug' => 's424-soma',       'code' => 'S424', 'name' => 'Pilpall Pouffe',     'family' => 'SOMA',        'type' => 'stool', 'img' => 'stool_a',
 			'blurb' => 'A soft slipcover footstool — the playful finishing touch.',
-			'specs' => array( 'Width' => '70 cm', 'Depth' => '70 cm', 'Height' => '42 cm', 'Frame' => 'Beech', ' Cover' => 'Removable slipcover' ),
+			'specs' => array( 'Width' => '70 cm', 'Depth' => '70 cm', 'Height' => '42 cm', 'Frame' => 'Beech', 'Cover' => 'Removable slipcover' ),
 			'gallery' => array( 'stool_a', 'interior_c' ) ),
 		array( 'slug' => 's428-soma',       'code' => 'S428', 'name' => 'Läs Lounge Chair',   'family' => 'SOMA',        'type' => 'chair', 'img' => 'chair_a',
 			'blurb' => 'An easy chair that carries the Måne language into the armchair.',
@@ -581,6 +585,8 @@ function stilla_handle_checkout() {
 	$desc    = wp_strip_all_tags( $prod['blurb'] );
 	$unit    = (int) round( $prod['price'] * 100 ); // cents
 	$amount  = $unit * $qty;
+	$order_ref = 'STL-' . time() . '-' . wp_rand( 100, 999 );
+	$success = add_query_arg( 'ref', $order_ref, $success );
 
 	// Create a Stripe Checkout Session via the REST API (PHP native, no SDK).
 	$payload = http_build_query( array(
@@ -593,7 +599,7 @@ function stilla_handle_checkout() {
 		'line_items[0][price_data][unit_amount]'        => $unit,
 		'line_items[0][quantity]'                        => $qty,
 		'metadata[product]'      => $slug,
-		'metadata[order_ref]'    => 'STL-' . time() . '-' . wp_rand( 100, 999 ),
+		'metadata[order_ref]'    => $order_ref,
 		'metadata[wp_user]'      => (string) get_current_user_id(),
 	) );
 	$ch = curl_init( STILLA_STRIPE_API . '/checkout/sessions' );
@@ -762,6 +768,8 @@ function stilla_checkout_cart() {
 	if ( empty( $cart ) ) wp_send_json_error( array( 'message' => 'Your cart is empty.' ) );
 	$success = home_url( '/account/?paid=1' );
 	$cancel  = home_url( '/cart/' );
+	$order_ref = 'STL-' . time() . '-' . wp_rand( 100, 999 );
+	$success = add_query_arg( 'ref', $order_ref, $success );
 	$line_items = array();
 	$i = 0;
 	foreach ( $cart as $item ) {
@@ -774,7 +782,7 @@ function stilla_checkout_cart() {
 	$line_items['mode'] = 'payment';
 	$line_items['success_url'] = $success;
 	$line_items['cancel_url']  = $cancel;
-	$line_items['metadata[order_ref]'] = 'STL-' . time() . '-' . wp_rand( 100, 999 );
+	$line_items['metadata[order_ref]'] = $order_ref;
 	$line_items['metadata[wp_user]']    = (string) get_current_user_id();
 	$payload = http_build_query( $line_items );
 	$ch = curl_init( STILLA_STRIPE_API . '/checkout/sessions' );
@@ -815,12 +823,16 @@ add_action( 'init', function () {
 	if ( isset( $_POST['stilla_action'] ) && $_POST['stilla_action'] === 'register' ) {
 		$email = sanitize_email( wp_unslash( $_POST['reg_email'] ?? '' ) );
 		$pass  = wp_unslash( $_POST['reg_pass'] ?? '' );
+		$name  = sanitize_text_field( wp_unslash( $_POST['reg_name'] ?? '' ) );
 		if ( ! $email || ! is_email( $email ) || strlen( $pass ) < 6 ) {
 			wp_redirect( home_url( '/register/?reg=error&msg=invalid' ) ); exit;
 		}
 		if ( email_exists( $email ) ) { wp_redirect( home_url( '/register/?reg=error&msg=exists' ) ); exit; }
 		$uid = wp_create_user( $email, $pass, $email );
 		if ( is_wp_error( $uid ) ) { wp_redirect( home_url( '/register/?reg=error&msg=fail' ) ); exit; }
+		if ( $name ) {
+			wp_update_user( array( 'ID' => $uid, 'display_name' => $name, 'first_name' => $name ) );
+		}
 		wp_set_current_user( $uid ); wp_set_auth_cookie( $uid );
 		wp_redirect( home_url( '/account/' ) ); exit;
 	}

@@ -10,8 +10,10 @@ if ( ! $logged_in ) {
 }
 ?>
 <main id="content" class="account">
-	<?php if ( ! empty( $_GET['paid'] ) ) : ?>
-		<div class="order-banner">✓ Payment successful — thank you! Your order has been recorded.</div>
+	<?php if ( ! empty( $_GET['paid'] ) ) :
+		$ref = isset( $_GET['ref'] ) ? preg_replace( '/[^A-Za-z0-9\-]/', '', $_GET['ref'] ) : '';
+	?>
+		<div class="order-banner">✓ Payment successful — thank you!<?php if ( $ref ) : ?> Your order reference is <strong><?php echo esc_html( $ref ); ?></strong>.<?php endif; ?> Your order has been recorded.</div>
 	<?php endif; ?>
 
 	<header class="account__head">

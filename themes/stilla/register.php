@@ -26,6 +26,10 @@ if ( isset( $_GET['reg'] ) && $_GET['reg'] === 'error' ) {
 				<form method="post" class="auth-form" novalidate>
 					<input type="hidden" name="stilla_action" value="register">
 					<div class="field">
+						<input type="text" id="reg_name" name="reg_name" placeholder=" " required autocomplete="name">
+						<label for="reg_name">Full name</label>
+					</div>
+					<div class="field">
 						<input type="email" id="reg_email" name="reg_email" placeholder=" " required autocomplete="email">
 						<label for="reg_email">Email address</label>
 					</div>
@@ -37,7 +41,7 @@ if ( isset( $_GET['reg'] ) && $_GET['reg'] === 'error' ) {
 				</form>
 
 				<p class="auth-card__switch">
-					By creating an account you agree to our <a class="auth-link" href="#">Terms</a> &amp; <a class="auth-link" href="#">Privacy Policy</a>.
+					By creating an account you agree to our <a class="auth-link" href="<?php echo esc_url( home_url( '/company/' ) ); ?>">Terms</a> &amp; <a class="auth-link" href="<?php echo esc_url( home_url( '/company/' ) ); ?>">Privacy Policy</a>.
 				</p>
 			</div>
 		</div>

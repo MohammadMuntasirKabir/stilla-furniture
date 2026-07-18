@@ -324,6 +324,7 @@ if (cartToggle && cartDrawer) {
 
 	// Checkout (drawer + cart page)
 	async function checkout() {
+		if ( ! stillaAjax.isLoggedIn ) { window.location.href = stillaAjax.loginUrl; return; }
 		const res = await fetch(stillaAjax.url, { method: 'POST', body: new URLSearchParams({ action: 'stilla_checkout_cart' }) });
 		const data = await res.json();
 		if (data.success && data.data.url) window.location.href = data.data.url;
