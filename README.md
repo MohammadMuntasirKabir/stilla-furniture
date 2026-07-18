@@ -37,8 +37,9 @@ SEO.
   Projects**) that scroll to on-page sections, and right-aligned search / account / cart /
   language controls. Fully responsive with a slide-in mobile menu.
 - **Self-hosted showreel** — the film section reads its MP4 from the Customizer
-  (*Appearance → Customize → Film / Showreel*); drop in your own upload and it replaces the
-  bundled sample. No code change needed.
+  (*Appearance → Customize → Film / Showreel*). A bundled clip is imported into the Media
+  Library and selected by default; upload your own furniture film and set its URL there — no
+  code change needed.
 - **Content pages** — footer-linked editorial pages **Inspiration**, **Sustainability**,
   **Tools** and **Company**, each with a branded hero, featured image and SEO metadata.
 - **Product detail pages** (`/product/<slug>/`) — minimal layout with sticky gallery +
