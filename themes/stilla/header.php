@@ -34,7 +34,7 @@ $cart_count = function_exists( 'stilla_cart_count' ) ? stilla_cart_count() : 0;
 			<button class="nav__icon" id="searchToggle" aria-label="Search" aria-expanded="false">
 				<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
 			</button>
-			<a class="nav__icon nav__acct" href="<?php echo esc_url( is_user_logged_in() ? home_url( '/account/' ) : home_url( '/login/' ) ); ?>" aria-label="Account">
+			<a class="nav__icon" href="<?php echo esc_url( is_user_logged_in() ? home_url( '/account/' ) : home_url( '/login/' ) ); ?>" aria-label="Account">
 				<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
 			</a>
 			<button class="nav__cart" id="cartToggle" aria-label="Cart">

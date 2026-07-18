@@ -30,13 +30,17 @@ SEO.
 ## Features
 
 - **Editorial homepage** — parallax hero, animated marquee, draggable product carousels
-  (SOMA / FRANKFURTER families) with prev-next + dots, tilt-on-hover editorials, a **film
-  section** (responsive `<video>` with poster), and a newsletter footer. Respects
-  `prefers-reduced-motion`.
-- **Content pages** — every navbar link lands on real content: Home, Products, **Inspiration**
-  (client project stories + reviews), **Sustainability** (materials & repair-first programme),
-  **Tools** (spec sheets / care guides), and **Company** (studio story). Each has a branded
-  hero, featured image and SEO metadata.
+  (SOMA / FRANKFURTER families) with prev-next + dots, tilt-on-hover editorials, an **About**
+  section, a **film section** (responsive `<video>` with poster), client reviews, and a
+  newsletter footer. Respects `prefers-reduced-motion`.
+- **Navbar** — logo left, centered primary links (**Home / About / Products / Reviews /
+  Projects**) that scroll to on-page sections, and right-aligned search / account / cart /
+  language controls. Fully responsive with a slide-in mobile menu.
+- **Self-hosted showreel** — the film section reads its MP4 from the Customizer
+  (*Appearance → Customize → Film / Showreel*); drop in your own upload and it replaces the
+  bundled sample. No code change needed.
+- **Content pages** — footer-linked editorial pages **Inspiration**, **Sustainability**,
+  **Tools** and **Company**, each with a branded hero, featured image and SEO metadata.
 - **Product detail pages** (`/product/<slug>/`) — minimal layout with sticky gallery +
   thumbnail switcher, price (incl. VAT), stock badge, quantity stepper, Add to cart / Buy now
   / Request a quote, and Specifications / Delivery & care accordions.

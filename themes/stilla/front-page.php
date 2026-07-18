@@ -1,7 +1,10 @@
 <?php
-/**
- * Front page — Stilla editorial furniture theme (real Unsplash photos).
- */
+// Resolve the showreel video source: self-hosted MP4 from the Customizer, else a bundled sample.
+function stilla_film_url() {
+	$custom = get_theme_mod( 'stilla_film_url', '' );
+	return $custom ?: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4';
+}
+
 get_header();
 
 // Helper to render a product card used in the carousels.
@@ -46,6 +49,24 @@ $frank = array_filter( $products, fn( $p ) => $p['family'] === 'FRANKFURTER' );
 		</div>
 	</div>
 
+	<!-- ABOUT -->
+	<section class="about reveal" id="about">
+		<div class="about__inner">
+			<div class="about__copy">
+				<p class="carousel-sec__count">STILLA — ÅHUS, SWEDEN</p>
+				<h2>Design for the long haul.</h2>
+				<p>Stilla is a Scandinavian furniture studio that designs contract-grade pieces meant to outlive trends. We pair honest materials — FSC-certified timber, recyclable steel and removable slipcovers — with a distinctly Nordic calm. Every product is built in Åhus and engineered to be repaired, not replaced.</p>
+				<p>From restaurants and hotels to studios and homes, our furniture is specified where durability and good design have to coexist.</p>
+				<div class="about__stats">
+					<div><strong>1986</strong><span>Designing since</span></div>
+					<div><strong>100%</strong><span>Repairable pieces</span></div>
+					<div><strong>Åhus</strong><span>Made in Sweden</span></div>
+				</div>
+			</div>
+			<div class="about__media" style="background-image:url('<?php echo stilla_img( 'studio_a', 1000 ); ?>')"></div>
+		</div>
+	</section>
+
 	<!-- EDITORIAL SPLIT -->
 	<section class="split reveal">
 		<a class="split__media" data-tilt href="<?php echo home_url( '/product/s42-soma/' ); ?>">
@@ -83,7 +104,7 @@ $frank = array_filter( $products, fn( $p ) => $p['family'] === 'FRANKFURTER' );
 	<section class="showreel reveal">
 		<div class="showreel__media">
 			<video class="showreel__video" controls preload="none" poster="<?php echo stilla_img( 'table_a', 1100 ); ?>">
-				<source src="https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4" type="video/mp4">
+				<source src="<?php echo esc_url( stilla_film_url() ); ?>" type="video/mp4">
 				Your browser does not support the video tag.
 			</video>
 		</div>
@@ -114,8 +135,8 @@ $frank = array_filter( $products, fn( $p ) => $p['family'] === 'FRANKFURTER' );
 		</div>
 	</section>
 
-	<!-- EDITORIAL: VILLHEM -->
-	<section class="split split--reverse reveal" id="villhem">
+	<!-- EDITORIAL: VILLHEM (PROJECTS) -->
+	<section class="split split--reverse reveal" id="projects">
 		<a class="split__media" data-tilt href="<?php echo home_url( '/products/' ); ?>">
 			<img class="split__photo" src="<?php echo stilla_img( 'chair_b', 900 ); ?>" alt="Villhem" loading="lazy">
 		</a>

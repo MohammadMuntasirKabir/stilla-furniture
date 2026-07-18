@@ -25,24 +25,33 @@ add_action( 'init', function () {
 	register_nav_menus( array( 'primary' => __( 'Primary Menu', 'stilla' ) ) );
 } );
 
+/* ---------- THEME OPTIONS (Customizer) ---------- */
+add_action( 'customize_register', function ( $wp_customize ) {
+	$wp_customize->add_section( 'stilla_film', array(
+		'title'    => __( 'Film / Showreel', 'stilla' ),
+		'priority' => 30,
+	) );
+	$wp_customize->add_setting( 'stilla_film_url', array(
+		'default'           => '',
+		'sanitize_callback' => 'esc_url_raw',
+	) );
+	$wp_customize->add_control( 'stilla_film_url', array(
+		'label'       => __( 'Showreel video URL (self-hosted MP4)', 'stilla' ),
+		'description' => __( 'Paste a direct .mp4 link (e.g. from Media Library). Leave blank to use the bundled sample.', 'stilla' ),
+		'section'     => 'stilla_film',
+		'type'        => 'url',
+	) );
+} );
+
 add_theme_support( 'title-tag' );
 add_theme_support( 'post-thumbnails' );
 
-/* ---------- SEED PAGES + NAV (so every nav link has real content) ---------- */
+/* ---------- SEED CONTENT PAGES + NAV ---------- */
+// Seeds the editorial pages linked from the footer (Inspiration, Sustainability, Tools, Company)
+// and (re)builds the primary navbar. Runs once on theme activation; content syncs on re-seed.
 function stilla_seed_pages() {
+	// Pages kept for footer/SEO — key => [ title, slug, excerpt, content, image_key ].
 	$pages = array(
-		'home' => array(
-			'Home', 'home',
-			'Welcome to Stilla — Scandinavian furniture made in Åhus, Sweden.',
-			'Stilla designs contract-grade Scandinavian furniture that is built to last a lifetime. Explore the Måne, Frankfurt and Terra families.',
-			'hero',
-		),
-		'products' => array(
-			'Products', 'products',
-			'Browse the full Stilla catalogue of sofas, chairs, tables and outdoor pieces.',
-			'The complete Stilla collection: modular sofas, lounge chairs, low tables and all-weather outdoor pieces. Filter by family, type and price, then buy securely with Stripe.',
-			'sofa_a',
-		),
 		'inspiration' => array(
 			'Inspiration', 'inspiration',
 			'Project stories, moodboards and the spaces our furniture lives in — from restaurants to studios.',
@@ -68,56 +77,51 @@ function stilla_seed_pages() {
 			'studio_a',
 		),
 	);
-	$ids = array();
 	foreach ( $pages as $key => $p ) {
 		$post = get_page_by_path( $p[1] );
-		if ( ! $post ) {
-			$ids[ $key ] = wp_insert_post( array(
-				'post_title'    => $p[0],
-				'post_name'     => $p[1],
-				'post_excerpt'  => $p[2],
-				'post_content'  => '<!-- wp:paragraph -->' . $p[3] . '<!-- /wp:paragraph -->',
-				'post_status'   => 'publish',
-				'post_type'     => 'page',
-			) );
-		} else {
-			$ids[ $key ] = $post->ID;
-		}
+		$pid  = $post ? $post->ID : wp_insert_post( array(
+			'post_title'    => $p[0],
+			'post_name'     => $p[1],
+			'post_status'   => 'publish',
+			'post_type'     => 'page',
+		) );
 		// Keep excerpt + featured image in sync on every seed (so re-seeds update content).
-		wp_update_post( array( 'ID' => $ids[ $key ], 'post_excerpt' => $p[2] ) );
-		$img_id = stilla_unsplash_attachment( $p[4] ?? 'hero' );
-		if ( $img_id && ! is_wp_error( $img_id ) ) { set_post_thumbnail( $ids[ $key ], $img_id ); }
+		wp_update_post( array( 'ID' => $pid, 'post_excerpt' => $p[2], 'post_content' => '<!-- wp:paragraph -->' . $p[3] . '<!-- /wp:paragraph -->' ) );
+		$img_id = stilla_unsplash_attachment( $p[4] );
+		if ( $img_id && ! is_wp_error( $img_id ) ) { set_post_thumbnail( $pid, $img_id ); }
 	}
-// Build the primary menu pointing at these pages (rebuild on seed).
-$menu = wp_get_nav_menu_object( 'Primary' );
-if ( ! $menu ) { $menu_id = wp_create_nav_menu( 'Primary' ); }
-else {
-	$menu_id = $menu->term_id;
-	// Remove any existing (stale) items so we start clean.
+
+	// Primary navbar: logo left (CSS), links centered, tools right.
+	// "About / Reviews / Projects" point to on-page sections (no dedicated pages needed).
+	$menu = wp_get_nav_menu_object( 'Primary' );
+	$menu_id = $menu ? $menu->term_id : wp_create_nav_menu( 'Primary' );
 	foreach ( wp_get_nav_menu_items( $menu_id ) as $mi ) { wp_delete_post( $mi->ID, true ); }
-}
-$order = array( 'home', 'products', 'inspiration', 'sustainability', 'tools', 'company' );
-$i = 1;
-foreach ( $order as $key ) {
-	wp_update_nav_menu_item( $menu_id, 0, array(
-		'menu-item-title'     => $pages[ $key ][0],
-		'menu-item-object-id' => $ids[ $key ],
-		'menu-item-object'    => 'page',
-		'menu-item-type'      => 'post_type',
-		'menu-item-status'    => 'publish',
-		'menu-item-position'  => $i++,
-	) );
-}
-// Assign menu to the primary location.
-$locations = get_theme_mod( 'nav_menu_locations', array() );
-$locations['primary'] = $menu_id;
-set_theme_mod( 'nav_menu_locations', $locations );
+	$menu_items = array(
+		array( 'Home',     home_url( '/' ) ),
+		array( 'About',    home_url( '/' ) . '#about' ),
+		array( 'Products', home_url( '/products/' ) ),
+		array( 'Reviews',  home_url( '/' ) . '#clients' ),
+		array( 'Projects', home_url( '/' ) . '#projects' ),
+	);
+	$i = 1;
+	foreach ( $menu_items as $data ) {
+		wp_update_nav_menu_item( $menu_id, 0, array(
+			'menu-item-title'    => $data[0],
+			'menu-item-url'      => $data[1],
+			'menu-item-type'     => 'custom',
+			'menu-item-status'   => 'publish',
+			'menu-item-position' => $i++,
+		) );
+	}
+	$locations = get_theme_mod( 'nav_menu_locations', array() );
+	$locations['primary'] = $menu_id;
+	set_theme_mod( 'nav_menu_locations', $locations );
 }
 add_action( 'after_switch_theme', 'stilla_seed_pages' );
 // Also run once on init in case the theme is already active.
 if ( ! get_option( 'stilla_seeded' ) ) {
-stilla_seed_pages();
-update_option( 'stilla_seeded', 1 );
+	stilla_seed_pages();
+	update_option( 'stilla_seeded', 1 );
 }
 
 
