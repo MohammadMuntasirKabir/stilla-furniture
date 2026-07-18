@@ -309,6 +309,7 @@ if (cartToggle && cartDrawer) {
 	});
 
 	async function addToCart(slug, qty = 1) {
+		if ( ! stillaAjax.isLoggedIn ) { window.location.href = stillaAjax.loginUrl; return; }
 		await fetch(stillaAjax.url, { method: 'POST', body: new URLSearchParams({ action: 'stilla_cart_add', slug, qty }) });
 		openCart();
 	}

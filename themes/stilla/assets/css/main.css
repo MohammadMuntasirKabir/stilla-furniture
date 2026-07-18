@@ -441,7 +441,22 @@ h1,h2,h3,h4 { font-weight: 700; letter-spacing: -0.01em; line-height: 1.05; }
 .drawer__foot { padding: 20px 24px; border-top: 1px solid var(--line); }
 .drawer__total { display: flex; justify-content: space-between; font-size: 16px; margin-bottom: 14px; }
 .drawer__foot .btn-solid { width: 100%; text-align: center; margin-bottom: 8px; }
-.drawer__checkout { background: var(--accent); }
+.drawer__checkout {
+	background: var(--ink);
+	color: var(--paper);
+	border: none;
+	width: 100%;
+	height: 52px;
+	border-radius: 999px;
+	font-size: 15px;
+	font-weight: 600;
+	letter-spacing: .03em;
+	cursor: pointer;
+	transition: background .25s var(--ease), transform .12s var(--ease);
+}
+.drawer__checkout:hover { background: #000; }
+.drawer__checkout:active { transform: scale(.985); }
+
 
 /* ---------- CATALOG CARD ADD BUTTON ---------- */
 .pcard__add { position: absolute; bottom: 10px; right: 10px; background: var(--ink); color: var(--paper); border: none; border-radius: 999px; padding: 7px 13px; font-size: 12px; font-weight: 700; letter-spacing: .04em; cursor: pointer; opacity: 0; transform: translateY(6px); transition: .25s var(--ease); }

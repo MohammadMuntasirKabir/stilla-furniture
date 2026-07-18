@@ -68,7 +68,7 @@ $cart_count = function_exists( 'stilla_cart_count' ) ? stilla_cart_count() : 0;
 		<div class="drawer__foot">
 			<div class="drawer__total"><span>Subtotal</span><strong id="drawerTotal">$<?php echo number_format( function_exists( 'stilla_cart_total' ) ? stilla_cart_total() : 0 ); ?></strong></div>
 			<a class="btn-solid" href="<?php echo esc_url( home_url( '/cart/' ) ); ?>" id="drawerView">View cart</a>
-			<button class="btn-solid drawer__checkout" id="drawerCheckout">Checkout</button>
+			<button class="drawer__checkout" id="drawerCheckout">Checkout</button>
 		</div>
 	</aside>
 </div>

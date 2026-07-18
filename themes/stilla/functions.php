@@ -16,6 +16,8 @@ add_action( 'wp_enqueue_scripts', function () {
 	wp_localize_script( 'stilla-main-js', 'stillaAjax', array(
 		'url' => admin_url( 'admin-ajax.php' ),
 		'stripePk' => defined( 'STILLA_STRIPE_PK' ) ? STILLA_STRIPE_PK : '',
+		'isLoggedIn' => is_user_logged_in(),
+		'loginUrl' => home_url( '/login/' ),
 	) );
 } );
 
@@ -25,6 +27,64 @@ add_action( 'init', function () {
 
 add_theme_support( 'title-tag' );
 add_theme_support( 'post-thumbnails' );
+
+/* ---------- SEED PAGES + NAV (so every nav link has real content) ---------- */
+function stilla_seed_pages() {
+$pages = array(
+	'home'          => array( 'Home',          'home',          'Welcome to Stilla — Scandinavian furniture made in Åhus, Sweden.' ),
+	'products'      => array( 'Products',      'products',      'Browse the full Stilla catalogue of sofas, chairs, tables and outdoor pieces.' ),
+	'inspiration'   => array( 'Inspiration',   'inspiration',   'Project stories, moodboards and the spaces our furniture lives in — from restaurants to studios.' ),
+	'sustainability'=> array( 'Sustainability','sustainability','How Stilla designs for longevity: durable materials, local production and repairable pieces.' ),
+	'tools'         => array( 'Tools',         'tools',         'Spec sheets, care guides and planning tools to help you design with Stilla.' ),
+	'company'       => array( 'Company',       'company',       'Stilla is a Scandinavian furniture studio based in Åhus, Sweden. Peace, love & good design.' ),
+);
+$ids = array();
+foreach ( $pages as $key => $p ) {
+	$post = get_page_by_path( $p[1] );
+	if ( ! $post ) {
+		$ids[ $key ] = wp_insert_post( array(
+			'post_title'   => $p[0],
+			'post_name'    => $p[1],
+			'post_content' => '<!-- wp:paragraph -->' . $p[2] . '<!-- /wp:paragraph -->',
+			'post_status'  => 'publish',
+			'post_type'    => 'page',
+		) );
+	} else {
+		$ids[ $key ] = $post->ID;
+	}
+}
+// Build the primary menu pointing at these pages (rebuild on seed).
+$menu = wp_get_nav_menu_object( 'Primary' );
+if ( ! $menu ) { $menu_id = wp_create_nav_menu( 'Primary' ); }
+else {
+	$menu_id = $menu->term_id;
+	// Remove any existing (stale) items so we start clean.
+	foreach ( wp_get_nav_menu_items( $menu_id ) as $mi ) { wp_delete_post( $mi->ID, true ); }
+}
+$order = array( 'home', 'products', 'inspiration', 'sustainability', 'tools', 'company' );
+$i = 1;
+foreach ( $order as $key ) {
+	wp_update_nav_menu_item( $menu_id, 0, array(
+		'menu-item-title'     => $pages[ $key ][0],
+		'menu-item-object-id' => $ids[ $key ],
+		'menu-item-object'    => 'page',
+		'menu-item-type'      => 'post_type',
+		'menu-item-status'    => 'publish',
+		'menu-item-position'  => $i++,
+	) );
+}
+// Assign menu to the primary location.
+$locations = get_theme_mod( 'nav_menu_locations', array() );
+$locations['primary'] = $menu_id;
+set_theme_mod( 'nav_menu_locations', $locations );
+}
+add_action( 'after_switch_theme', 'stilla_seed_pages' );
+// Also run once on init in case the theme is already active.
+if ( ! get_option( 'stilla_seeded' ) ) {
+stilla_seed_pages();
+update_option( 'stilla_seeded', 1 );
+}
+
 
 /* ---------- SEO ---------- */
 // Resolve the SEO context for the current request (title, description, image, type, canonical).
@@ -444,6 +504,9 @@ function stilla_cart_total() { $t = 0; foreach ( stilla_cart() as $i ) { $t += $
 add_action( 'wp_ajax_stilla_cart_add', 'stilla_cart_add' );
 add_action( 'wp_ajax_nopriv_stilla_cart_add', 'stilla_cart_add' );
 function stilla_cart_add() {
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'code' => 'login', 'message' => 'Please sign in to add items to your cart.' ) );
+	}
 	$slug = sanitize_title( wp_unslash( $_POST['slug'] ?? '' ) );
 	$qty  = max( 1, (int) ( $_POST['qty'] ?? 1 ) );
 	$p    = stilla_get_product( $slug );
