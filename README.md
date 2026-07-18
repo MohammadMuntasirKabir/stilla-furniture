@@ -118,6 +118,23 @@ To run a full test checkout:
 For **live payments**, replace both keys with live keys and point `STILLA_STRIPE_API` at
 `https://api.stripe.com` (the publishable key is safe to commit; keep the secret in `.env`).
 
+## Stripe webhook (order fulfillment)
+
+Completed payments are recorded as `stilla_order` posts (status `paid`) by a webhook at
+`/stripe/webhook/`. The endpoint verifies the Stripe signature when `STILLA_STRIPE_WHSEC` is set.
+
+1. In the Stripe dashboard (Developers → Webhooks, **test mode**), add an endpoint pointing at
+   `https://<your-domain>/stripe/webhook/` and listen for `checkout.session.completed`.
+2. Copy its **signing secret** (`whsec_…`) into `.env`:
+   ```bash
+   STILLA_STRIPE_WHSEC=whsec_xxx
+   ```
+3. Restart the stack. Without a secret the endpoint runs in **dev mode** (signature NOT
+   verified) so local demos work without a live webhook.
+
+The webhook is the single source of truth for orders — it's idempotent (keyed by the session's
+`order_ref` metadata) and creates an order even for the single-product Buy now flow.
+
 ## Public URL (Cloudflare quick tunnel)
 
 The site runs locally on port 8080. To share it:

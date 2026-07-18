@@ -594,7 +594,79 @@ function stilla_handle_checkout() {
 	wp_send_json_success( array( 'url' => $data['url'], 'session' => $data['id'] ) );
 }
 
-// Record completed orders (stored privately; a webhook would update status to "paid").
+// Find an existing stilla_order by its Stripe order_ref metadata (idempotency for webhooks).
+function stilla_order_by_ref( $ref ) {
+	$ids = get_posts( array(
+		'post_type' => 'stilla_order',
+		'post_status' => 'any',
+		'meta_key' => 'order_ref',
+		'meta_value' => $ref,
+		'fields' => 'ids',
+		'posts_per_page' => 1,
+	) );
+	return $ids ? (int) $ids[0] : 0;
+}
+
+// Stripe webhook endpoint (/stripe/webhook/). Verifies the signature when STILLA_STRIPE_WHSEC
+// is set, and on checkout.session.completed records/mark paid the order keyed by order_ref.
+function stilla_stripe_webhook() {
+	nocache_headers();
+	header( 'Content-Type: application/json' );
+	$payload = file_get_contents( 'php://input' );
+	$sig     = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
+	$whsec   = getenv( 'STILLA_STRIPE_WHSEC' ) ?: '';
+
+	// Verify signature when a webhook secret is configured; dev mode (no secret) skips it.
+	if ( $whsec ) {
+		if ( ! $sig || ! str_contains( $sig, 'v1=' ) ) { status_header( 400 ); echo wp_json_encode( array( 'error' => 'bad signature' ) ); return; }
+		parse_str( str_replace( ',', '&', $sig ), $parts );
+		$timestamp = $parts['t'] ?? '';
+		$expected  = hash_hmac( 'sha256', $timestamp . '.' . $payload, $whsec );
+		if ( ! hash_equals( $expected, $parts['v1'] ?? '' ) ) { status_header( 400 ); echo wp_json_encode( array( 'error' => 'invalid signature' ) ); return; }
+	}
+
+	$event = json_decode( $payload, true );
+	if ( empty( $event['type'] ) ) { status_header( 400 ); echo wp_json_encode( array( 'error' => 'bad payload' ) ); return; }
+
+	if ( $event['type'] === 'checkout.session.completed' ) {
+		$sess      = $event['data']['object'] ?? array();
+		$ref       = $sess['metadata']['order_ref'] ?? '';
+		$email     = $sess['customer_details']['email'] ?? '';
+		$amount    = isset( $sess['amount_total'] ) ? ( (int) $sess['amount_total'] ) / 100 : 0;
+		$session_id= $sess['id'] ?? '';
+
+		if ( ! $ref ) {
+			// No order_ref on the session — record a generic order so nothing is lost.
+			$ref = 'STL-WEBHOOK-' . ( $session_id ?: time() );
+		}
+		$existing = stilla_order_by_ref( $ref );
+		$meta = array(
+			'order_ref'   => $ref,
+			'email'       => $email,
+			'amount'      => $amount,
+			'paid'        => 1,
+			'status'      => 'paid',
+			'session_id'  => $session_id,
+		);
+		if ( $existing ) {
+			wp_update_post( array( 'ID' => $existing, 'post_status' => 'private' ) );
+			foreach ( $meta as $k => $v ) { update_post_meta( $existing, $k, $v ); }
+		} else {
+			wp_insert_post( array(
+				'post_type'    => 'stilla_order',
+				'post_title'   => 'Order ' . ( $ref ?: $session_id ),
+				'post_content' => 'Stripe Checkout Session ' . $session_id . ( $email ? ' — ' . $email : '' ),
+				'post_status'  => 'private',
+				'post_author'  => 0,
+				'meta_input'   => $meta,
+			) );
+		}
+	}
+
+	echo wp_json_encode( array( 'received' => true ) );
+}
+
+// Register the order post type (hidden from menus).
 add_action( 'init', function () {
 	register_post_type( 'stilla_order', array(
 		'label' => 'Stripe orders',
@@ -604,7 +676,6 @@ add_action( 'init', function () {
 		'capability_type' => 'post',
 	) );
 } );
-
 /* ---------- CART (session-based) ---------- */
 if ( session_status() === PHP_SESSION_NONE && ! headers_sent() ) { @session_start(); }
 function stilla_cart() { return $_SESSION['stilla_cart'] ?? array(); }
@@ -696,9 +767,10 @@ add_action( 'init', function () {
 	add_rewrite_rule( '^login/?$',            'index.php?stilla_auth=login', 'top' );
 	add_rewrite_rule( '^register/?$',         'index.php?stilla_auth=register', 'top' );
 	add_rewrite_rule( '^cart/?$',            'index.php?stilla_cart_page=1', 'top' );
+	add_rewrite_rule( '^stripe/webhook/?$',  'index.php?stilla_webhook=1', 'top' );
 } );
 add_filter( 'query_vars', function ( $vars ) {
-	$vars[] = 'stilla_account'; $vars[] = 'stilla_auth'; $vars[] = 'stilla_cart_page';
+	$vars[] = 'stilla_account'; $vars[] = 'stilla_auth'; $vars[] = 'stilla_cart_page'; $vars[] = 'stilla_webhook';
 	return $vars;
 } );
 add_filter( 'template_include', function ( $template ) {
@@ -706,6 +778,7 @@ add_filter( 'template_include', function ( $template ) {
 	if ( $auth === 'login' || $auth === 'register' ) return get_stylesheet_directory() . '/' . $auth . '.php';
 	if ( get_query_var( 'stilla_account' ) )    return get_stylesheet_directory() . '/account.php';
 	if ( get_query_var( 'stilla_cart_page' ) )  return get_stylesheet_directory() . '/cart.php';
+	if ( get_query_var( 'stilla_webhook' ) )    { stilla_stripe_webhook(); exit; }
 	return $template;
 } );
 
@@ -744,21 +817,11 @@ add_action( 'init', function () {
 	}
 } );
 
-// Record a placed order against the logged-in user (called after returning from Stripe with ?paid=1).
+// After returning from Stripe with ?paid=1: clear the cart. The order itself is created/|
+// marked paid by the Stripe webhook (/stripe/webhook/), which is the source of truth.
 add_action( 'template_redirect', function () {
 	if ( get_query_var( 'stilla_account' ) && ! empty( $_GET['paid'] ) && is_user_logged_in() ) {
-		$cart = stilla_cart();
-		if ( $cart ) {
-			$lines = array();
-			foreach ( $cart as $it ) { $lines[] = $it['name'] . ' ×' . $it['qty']; }
-			wp_insert_post( array(
-				'post_type' => 'stilla_order', 'post_title' => 'Order ' . wp_get_current_user()->user_email,
-				'post_content' => implode( "\n", $lines ), 'post_status' => 'private',
-				'post_author' => get_current_user_id(),
-				'meta_input' => array( 'total' => stilla_cart_total(), 'items' => count( $cart ) ),
-			) );
-			$_SESSION['stilla_cart'] = array();
-		}
+		$_SESSION['stilla_cart'] = array();
 	}
 } );
 
