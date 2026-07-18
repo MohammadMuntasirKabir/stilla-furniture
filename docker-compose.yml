@@ -30,6 +30,7 @@ services:
       WORDPRESS_DB_NAME: wordpress
       WORDPRESS_DB_USER: wpuser
       WORDPRESS_DB_PASSWORD: wppassword
+      STILLA_STRIPE_SK: ${STILLA_STRIPE_SK}
     volumes:
       - wp_core:/var/www/html
       - ./themes/stilla:/var/www/html/wp-content/themes/stilla

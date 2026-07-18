@@ -95,21 +95,28 @@ docker compose down -v     # wipe the database
   docker compose exec -T wordpress wp user update admin --user_pass='NEW' --allow-root
   ```
 
-## Configure Stripe (required for live payments)
+## Configure Stripe (test mode is pre-wired)
 
-Open `themes/stilla/functions.php` and set your keys near the top:
+The storefront uses **Stripe Checkout** (server-side session, test mode). The publishable key
+is already set in `themes/stilla/functions.php`. The **secret key is injected via the
+`STILLA_STRIPE_SK` environment variable** (see `.env` + `docker-compose.yml`) so it never
+lands in version control.
 
-```php
-define( 'STILLA_STRIPE_PK', 'pk_test_xxx' );
-define( 'STILLA_STRIPE_SK', 'sk_test_xxx' );
-```
+To run a full test checkout:
 
-Without real keys, checkout redirects to Stripe but won't process — it fails gracefully with
-a clear message. After editing, flush rewrites:
+1. Put your test secret key in `.env`:
+   ```bash
+   STILLA_STRIPE_SK=sk_test_xxx
+   ```
+2. Restart the stack so the container picks it up:
+   ```bash
+   docker compose up -d
+   ```
+3. Sign in, click **Buy now**, and pay with test card `4242 4242 4242 4242` (any future date,
+   any CVC). You'll be redirected to the order-success page.
 
-```bash
-docker compose exec -T wordpress wp rewrite flush --hard --allow-root
-```
+For **live payments**, replace both keys with live keys and point `STILLA_STRIPE_API` at
+`https://api.stripe.com` (the publishable key is safe to commit; keep the secret in `.env`).
 
 ## Public URL (Cloudflare quick tunnel)
 

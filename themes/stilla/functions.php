@@ -532,9 +532,11 @@ add_action( 'init', function () {
 
 /* ---------- STRIPE CHECKOUT ---------- */
 // Test keys — safe to commit to a public repo (publishable + test secret).
-// Replace with live keys + switch the URL below to https://api.stripe.com when going live.
-define( 'STILLA_STRIPE_PK', 'pk_test_51RZHgPQZxsample00000000000000000000000000000000000000000000000' );
-define( 'STILLA_STRIPE_SK', 'sk_test_51RZHgPQZxsample00000000000000000000000000000000000000000000000' );
+// The secret key is injected via the STILLA_STRIPE_SK environment variable (see .env / docker-compose.yml)
+// so it never lands in version control. Replace with live keys + switch STILLA_STRIPE_API to
+// https://api.stripe.com when going live.
+define( 'STILLA_STRIPE_PK', 'pk_test_51TuaUdEFD1wheS582HbQr2yl7KadeoYp48t80pJzTaa8ajfZD4Y2XO3QeO7c7I6KPoCeTtr86HA3w5JRVMQQKGGp0006sCfr37' );
+define( 'STILLA_STRIPE_SK', getenv( 'STILLA_STRIPE_SK' ) ?: 'sk_test_REPLACE_WITH_ENV' );
 define( 'STILLA_STRIPE_API', 'https://api.stripe.com/v1' );
 
 add_action( 'wp_ajax_stilla_checkout', 'stilla_handle_checkout' );
