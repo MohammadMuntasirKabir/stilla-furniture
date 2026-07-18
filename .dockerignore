@@ -1,0 +1,8 @@
+# Exclude local runtime/working files from the Docker build context.
+.git
+.gitignore
+**/.DS_Store
+wp-content/uploads
+node_modules
+*.log
+compose.*.yml

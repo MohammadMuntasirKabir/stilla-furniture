@@ -97,7 +97,36 @@ a clear message. After editing, flush rewrites:
 docker compose exec -T wordpress wp rewrite flush --hard --allow-root
 ```
 
-## Public URL (Cloudflare quick tunnel)
+## Deploy to Railway
+
+The project ships a self-contained `Dockerfile` (bakes the custom theme + mu-plugin into the
+official WordPress image and runs nginx + php-fpm via supervisord). Railway builds it and
+provides MySQL.
+
+1. Create a **Railway** project and add the **MySQL** plugin (creates `MYSQL_HOST`,
+   `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE` env vars).
+2. Add a service from this GitHub repo (New → Deployment Service → GitHub →
+   `MohammadMuntasirKabir/stilla-furniture`). Railway auto-detects `railway.json` (Docker
+   builder, exposes port 80).
+3. In the service **Variables**, add:
+   - `WORDPRESS_DB_HOST` = `${{MySQL.MYSQL_HOST}}` (use the MySQL plugin reference)
+   - `WORDPRESS_DB_NAME` = `${{MySQL.MYSQL_DATABASE}}`
+   - `WORDPRESS_DB_USER` = `${{MySQL.MYSQL_USER}}`
+   - `WORDPRESS_DB_PASSWORD` = `${{MySQL.MYSQL_PASSWORD}}`
+   - `WP_URL` = your Railway domain (e.g. `https://stilla.up.railway.app`)
+   - `ADMIN_PASS` (optional) to override the default admin password
+4. Deploy. On first boot `docker/init.sh` runs `wp core install`, activates the **stilla**
+   theme, and flushes rewrites. The `dynamic-url` mu-plugin makes WordPress follow the
+   Railway URL automatically.
+5. Optional: add a **Custom Domain** + Railway's auto-TLS. Change `WORDPRESS_DB_PASSWORD` and
+   the admin password before going live, and set real Stripe keys in `functions.php`
+   (`STILLA_STRIPE_PK` / `STILLA_STRIPE_SK`).
+
+> Free/teardown note: Railway's MySQL volume persists between deploys. If you wipe the DB, the
+> WP install + theme re-run automatically on next boot. Product/catalogue data is code-defined
+> in `stilla_products()` (functions.php), so it survives a fresh install.
+
+
 
 The site runs locally on port 8080. To share it:
 
